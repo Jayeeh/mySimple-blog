@@ -66,11 +66,56 @@ app.get("/logout", (req, res) => {
 })
 
 app.post("/login", (req, res) => {
-  const errors = []
+  let errors = []
 
   // Ensure username and password are strings, set to empty string if not
   if (typeof req.body.username !== "string") req.body.username = "";
   if (typeof req.body.password !== "string") req.body.password = "";
+
+  if (req.body.username.trim() == "") errors = ["Invalid Username / Password."]
+  if (req.body.password == "") errors = ["Invalid Username / Password."]
+
+  if (errors.length) {
+    return res.render("login", {errors})
+  }
+
+  // Original Line of Code
+  // const userInQuestionStatement = db.prepare("SELECT * FROM users WHERE USERNAME = ?")
+  // const userInQuestion = userInQuestionStatement.get(req.body.username)
+
+  // Revised
+  let userInQuestion;
+  try {
+    const userInQuestionStatement = db.prepare("SELECT * FROM users WHERE username = ?");
+    userInQuestion = userInQuestionStatement.get(req.body.username);
+  } catch (error) {
+    errors.push("Database error. Please try again later.");
+    return res.render("login", {errors});
+  }
+
+
+  if (!userInQuestion) {
+    errors = ["Invalid Username / Password."]
+    return res.render("login", {errors})
+  }
+
+  const matchOrNot = bcrypt.compareSync(req.body.password, userInQuestion.password)
+  if (!matchOrNot) {
+    errors = ["Invalid Username / Password."]
+    return res.render("login", {errors})
+  }
+
+  // give them a cookie
+  const ourTokenValue = jwt.sign({exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, userid: userInQuestion.id, username: userInQuestion.username}, process.env.JWTSECRET)
+
+  res.cookie("ourSimpleApp", ourTokenValue, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 1000 * 60 * 60 * 24
+  })
+
+  res.redirect("/home")
 
 })
 
@@ -121,7 +166,7 @@ app.post("/register", (req, res) => {
     maxAge: 1000 * 60 * 60 * 24
   })
 
-  res.send("Thank you!");
+  res.redirect("/home")
 });
 
  
