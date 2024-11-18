@@ -6,8 +6,17 @@
     <%- include('includes/header') %>
 
     <main>
-        <h1>Dashboard</h1>
-        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Quia, earum deleniti? Sapiente sit dolorem tenetur illum, nulla blanditiis dolores, delectus debitis laudantium et qui incidunt aspernatur ad, nemo quod natus!</p>
+        <% if (posts.length == 0) { %>
+            <h4>Hello <%= user.username %>, you do not have any posts yet.</h4>
+        <% } else { %>
+            <h4>Hello <%= user.username %>, here are your posts.</h4>
+        <% } %>
+
+        <ul>
+            <% posts.forEach(post => { %>
+                <li><a href="/post/<%= post.id %>"><%= post.title %></a> on <%= new Date(post.createdDate).getMonth() + 1 %>/<%= new Date(post.createdDate).getDate() %>/<%= new Date(post.createdDate).getFullYear() %></li>
+            <% }) %>
+        </ul>
     </main>
 
     <%- include('includes/footer') %>
